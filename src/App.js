@@ -4,8 +4,8 @@ import {
   InMemoryCache,
   ApolloProvider,
   createHttpLink,
-  setContext,
 } from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
 
 import { NavBar } from "./components/NavBar";
 import { AppRouter } from "./components/AppRouter";
