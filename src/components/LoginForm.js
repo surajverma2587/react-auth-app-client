@@ -1,20 +1,45 @@
-import { Link as RouterLink } from "react-router-dom";
+import { useMutation } from "@apollo/client";
 import { useForm } from "react-hook-form";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
+import LoadingButton from "@mui/lab/LoadingButton";
+
+import { LOGIN } from "../mutations";
+import { useEffect } from "react";
 
 export const LoginForm = () => {
+  const [executeLogin, { loading, data, error }] = useMutation(LOGIN);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data) => {
-    console.log("form submitted", data);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (data) {
+      const token = data.login.token;
+
+      localStorage.setItem("token", token);
+
+      navigate("/dashboard", { replace: true });
+    }
+  }, [data]);
+
+  const onSubmit = async ({ email, password }) => {
+    await executeLogin({
+      variables: {
+        input: {
+          email: email.toLowerCase().trim(),
+          password,
+        },
+      },
+    });
   };
 
   const validateForm = (formErrors) => {
@@ -41,6 +66,7 @@ export const LoginForm = () => {
         fullWidth
         {...register("email", { required: true })}
         error={!!errors.email}
+        disabled={loading}
       />
       <TextField
         type="password"
@@ -52,10 +78,19 @@ export const LoginForm = () => {
         fullWidth
         {...register("password", { required: true })}
         error={!!errors.password}
+        disabled={loading}
       />
-      <Button type="submit" variant="contained" fullWidth sx={{ mt: 3, mb: 2 }}>
+      <LoadingButton
+        loading={loading}
+        loadingIndicator="Loading..."
+        variant="contained"
+        fullWidth
+        type="submit"
+        sx={{ mt: 3, mb: 2 }}
+      >
         Login
-      </Button>
+      </LoadingButton>
+
       <Link
         component={RouterLink}
         to="/sign-up"
@@ -64,7 +99,7 @@ export const LoginForm = () => {
       >
         Don't have an account? Sign Up
       </Link>
-      {validateForm(errors) && (
+      {(validateForm(errors) || error) && (
         <Typography
           variant="subtitle2"
           gutterBottom
