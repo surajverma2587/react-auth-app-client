@@ -1,21 +1,21 @@
 import { useMutation } from "@apollo/client";
 import { useForm } from "react-hook-form";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import LoadingButton from "@mui/lab/LoadingButton";
 import ErrorIcon from "@mui/icons-material/Error";
 import Divider from "@mui/material/Divider";
 
-import { LOGIN } from "../mutations";
+import { POST_IMAGE } from "../mutations";
 import { useEffect } from "react";
 import { useAuth } from "../contexts/AppProvider";
+// import { ImageUpload } from "./ImageUpload";
 
-export const LoginForm = () => {
-  const { setIsLoggedIn, setUser } = useAuth();
-  const [executeLogin, { loading, data, error }] = useMutation(LOGIN);
+export const PostImageForm = () => {
+  const { setIsLoggedIn } = useAuth();
+  const [executePostImage, { loading, data, error }] = useMutation(POST_IMAGE);
 
   const {
     register,
@@ -27,30 +27,17 @@ export const LoginForm = () => {
 
   useEffect(() => {
     if (data) {
-      const { token, user } = data.login;
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      setIsLoggedIn(true);
-      setUser({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        username: user.username,
-      });
-
       navigate("/dashboard", { replace: true });
     }
   }, [data]);
 
-  const onSubmit = async ({ email, password }) => {
-    await executeLogin({
+  const onSubmit = async ({ title, description, imageUrl }) => {
+    await executePostImage({
       variables: {
         input: {
-          email: email.toLowerCase().trim(),
-          password,
+          title,
+          description,
+          imageUrl,
         },
       },
     });
@@ -93,25 +80,37 @@ export const LoginForm = () => {
       <Box component="form" sx={styles.form} onSubmit={handleSubmit(onSubmit)}>
         <TextField
           margin="normal"
-          id="email"
-          label="Email"
-          name="email"
+          id="title"
+          label="Title"
+          name="title"
           variant="outlined"
           fullWidth
-          {...register("email", { required: true })}
-          error={!!errors.email}
+          {...register("title", { required: true })}
+          error={!!errors.title}
           disabled={loading}
         />
         <TextField
-          type="password"
           margin="normal"
-          id="password"
-          label="Password"
-          name="password"
+          id="description"
+          label="Description"
+          name="description"
           variant="outlined"
           fullWidth
-          {...register("password", { required: true })}
-          error={!!errors.password}
+          {...register("description", { required: true })}
+          error={!!errors.description}
+          disabled={loading}
+          multiline
+          rows={4}
+        />
+        <TextField
+          margin="normal"
+          id="imageUrl"
+          label="Image URL"
+          name="imageUrl"
+          variant="outlined"
+          fullWidth
+          {...register("imageUrl", { required: true })}
+          error={!!errors.imageUrl}
           disabled={loading}
         />
         <LoadingButton
@@ -124,16 +123,8 @@ export const LoginForm = () => {
           startIcon={error && <ErrorIcon />}
           color={error ? "error" : "primary"}
         >
-          Login
+          Post
         </LoadingButton>
-        <Link
-          component={RouterLink}
-          to="/sign-up"
-          variant="body2"
-          underline="none"
-        >
-          Don't have an account? Sign Up
-        </Link>
         {error && (
           <Typography
             variant="subtitle2"
@@ -141,7 +132,7 @@ export const LoginForm = () => {
             component="div"
             sx={styles.errorContainer}
           >
-            Failed to login, please enter valid email address and/or password.
+            Failed to create post, please try again later.
           </Typography>
         )}
       </Box>

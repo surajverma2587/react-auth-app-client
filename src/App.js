@@ -9,6 +9,7 @@ import { setContext } from "@apollo/client/link/context";
 
 import { NavBar } from "./components/NavBar";
 import { AppRouter } from "./components/AppRouter";
+import { AppProvider } from "./contexts/AppProvider";
 
 const httpLink = createHttpLink({
   uri: "http://localhost:4000",
@@ -34,10 +35,12 @@ const client = new ApolloClient({
 export const App = () => {
   return (
     <ApolloProvider client={client}>
-      <BrowserRouter>
-        <NavBar />
-        <AppRouter />
-      </BrowserRouter>
+      <AppProvider>
+        <BrowserRouter>
+          {/* <NavBar /> */}
+          <AppRouter />
+        </BrowserRouter>
+      </AppProvider>
     </ApolloProvider>
   );
 };
