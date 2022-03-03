@@ -9,11 +9,10 @@ import LoadingButton from "@mui/lab/LoadingButton";
 import ErrorIcon from "@mui/icons-material/Error";
 import Divider from "@mui/material/Divider";
 
-import { LOGIN } from "../mutations";
-import { useEffect } from "react";
+import { SIGNUP } from "../mutations";
 
-export const LoginForm = () => {
-  const [executeLogin, { loading, data, error }] = useMutation(LOGIN);
+export const SignUpForm = () => {
+  const [executeSignUp, { loading, error }] = useMutation(SIGNUP);
 
   const {
     register,
@@ -23,29 +22,32 @@ export const LoginForm = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (data) {
-      const token = data.login.token;
-
-      localStorage.setItem("token", token);
-
-      navigate("/dashboard", { replace: true });
-    }
-  }, [data]);
-
-  const onSubmit = async ({ email, password }) => {
-    await executeLogin({
-      variables: {
-        input: {
-          email: email.toLowerCase().trim(),
-          password,
+  const onSubmit = async ({
+    firstName,
+    lastName,
+    username,
+    email,
+    password,
+  }) => {
+    try {
+      const { data } = await executeSignUp({
+        variables: {
+          input: {
+            firstName: firstName.toLowerCase().trim(),
+            lastName: lastName.toLowerCase().trim(),
+            username: username.toLowerCase().trim(),
+            email: email.toLowerCase().trim(),
+            password,
+          },
         },
-      },
-    });
-  };
+      });
 
-  const validateForm = (formErrors) => {
-    return !!formErrors.email || !!formErrors.password;
+      if (data) {
+        navigate("/login", { replace: true });
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const styles = {
@@ -79,10 +81,43 @@ export const LoginForm = () => {
         align="center"
         sx={styles.header}
       >
-        Login
+        Sign Up
       </Typography>
       <Divider />
       <Box component="form" sx={styles.form} onSubmit={handleSubmit(onSubmit)}>
+        <TextField
+          margin="normal"
+          id="firstName"
+          label="First Name"
+          name="firstName"
+          variant="outlined"
+          fullWidth
+          {...register("firstName", { required: true })}
+          error={!!errors.firstName}
+          disabled={loading}
+        />
+        <TextField
+          margin="normal"
+          id="lastName"
+          label="Last Name"
+          name="lastName"
+          variant="outlined"
+          fullWidth
+          {...register("lastName", { required: true })}
+          error={!!errors.lastName}
+          disabled={loading}
+        />
+        <TextField
+          margin="normal"
+          id="username"
+          label="Username"
+          name="username"
+          variant="outlined"
+          fullWidth
+          {...register("username", { required: true })}
+          error={!!errors.username}
+          disabled={loading}
+        />
         <TextField
           margin="normal"
           id="email"
@@ -116,15 +151,16 @@ export const LoginForm = () => {
           startIcon={error && <ErrorIcon />}
           color={error ? "error" : "primary"}
         >
-          Login
+          Sign Up
         </LoadingButton>
+
         <Link
           component={RouterLink}
-          to="/sign-up"
+          to="/login"
           variant="body2"
           underline="none"
         >
-          Don't have an account? Sign Up
+          Already have an account? Login
         </Link>
         {error && (
           <Typography
@@ -133,7 +169,8 @@ export const LoginForm = () => {
             component="div"
             sx={styles.errorContainer}
           >
-            Failed to login, please enter valid email address and/or password.
+            Failed to sign up, please make sure you enter the correct details or
+            try again later.
           </Typography>
         )}
       </Box>
