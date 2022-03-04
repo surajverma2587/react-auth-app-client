@@ -2,43 +2,66 @@ import { useState } from "react";
 import S3 from "react-aws-s3";
 import ImageUploading from "react-images-uploading";
 import Card from "@mui/material/Card";
-import CardActionArea from "@mui/material/CardActionArea";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 
-export const ImageUpload = () => {
+export const ImageUpload = ({ imageUrl, setImageUrl, fileName }) => {
   const [images, setImages] = useState([]);
-  const [imageUrl, setImageUrl] = useState();
+  const [s3FileName, setS3FileName] = useState();
+
+  const config = {
+    dirName: "media",
+    bucketName: process.env.REACT_APP_BUCKET_NAME,
+    region: process.env.REACT_APP_REGION,
+    accessKeyId: process.env.REACT_APP_ACCESS_KEY,
+    secretAccessKey: process.env.REACT_APP_ACCESS_ID,
+  };
+
+  const ReactS3Client = new S3(config);
 
   const onChange = (imageList) => {
     setImages(imageList);
   };
 
   const onUpload = async () => {
-    const file = images[0].file;
-    const fileName = `bobsmith/images/profile/${file.name}`;
-    console.log(process.env.REACT_APP_BUCKET_NAME);
+    try {
+      const file = images[0].file;
+      const s3Data = await ReactS3Client.uploadFile(
+        file,
+        `${fileName}/${file.name}`
+      );
 
-    const config = {
-      bucketName: process.env.REACT_APP_BUCKET_NAME,
-      region: process.env.REACT_APP_REGION,
-      accessKeyId: process.env.REACT_APP_ACCESS_ID,
-      secretAccessKey: process.env.REACT_APP_ACCESS_KEY,
-    };
+      if (s3Data.status === 204) {
+        setImageUrl(s3Data.location);
+        setImages([]);
+        setS3FileName(`${fileName}/${file.name}`);
+      } else {
+        console.log("failed to upload image");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-    const ReactS3Client = new S3(config);
+  const onImageRemove = async () => {
+    try {
+      const s3Data = await ReactS3Client.deleteFile(s3FileName);
 
-    const s3Data = await ReactS3Client.uploadFile(file, fileName);
+      console.log(s3Data);
 
-    if (s3Data.status === 204) {
-      setImageUrl(s3Data.location);
-      setImages([]);
-    } else {
-      console.log("failed to upload image");
+      if (s3Data.status === 204) {
+        setImageUrl();
+        setImages([]);
+      } else {
+        console.log("failed to delete image");
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -61,7 +84,7 @@ export const ImageUpload = () => {
     <ImageUploading value={images} onChange={onChange} dataURLKey="data_url">
       {({ imageList, onImageUpload, onImageRemoveAll }) => (
         <Card sx={styles.root}>
-          <CardActionArea>
+          <Box>
             {images.length !== 0 && (
               <>
                 <Typography variant="h6" display="block" sx={styles.title}>
@@ -76,16 +99,23 @@ export const ImageUpload = () => {
                   Uploaded Image
                 </Typography>
                 <CardMedia sx={styles.media} image={imageUrl} />
+                <CardContent>
+                  <Typography variant="caption" display="block" gutterBottom>
+                    {imageUrl}
+                  </Typography>
+                  <Box sx={{ textAlign: "center", mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={onImageRemove}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                </CardContent>
               </>
             )}
-            <CardContent>
-              {imageUrl && (
-                <Typography variant="caption" display="block" gutterBottom>
-                  {imageUrl}
-                </Typography>
-              )}
-            </CardContent>
-          </CardActionArea>
+          </Box>
           <CardActions sx={styles.cardActions}>
             {imageList.length === 0 && (
               <Button

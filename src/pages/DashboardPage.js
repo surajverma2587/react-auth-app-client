@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { PostImageModal } from "../components/PostImageModal";
 import { useAuth } from "../contexts/AppProvider";
 import { DASHBOARD } from "../queries";
+import { ImageContainer } from "../components/ImageContainer";
 
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export const DashboardPage = () => {
   const styles = {
     container: {
       backgroundColor: "#fff",
+      minHeight: "90vh",
     },
     headerContainer: {
       padding: 2,
@@ -66,7 +68,9 @@ export const DashboardPage = () => {
         )}
         {!loading && data?.dashboard && (
           <Box sx={{ display: "flex", justifyContent: "center" }}>
-            Images goes here
+            {data?.dashboard?.images?.length !== 0 && (
+              <ImageContainer images={data.dashboard.images} />
+            )}
           </Box>
         )}
       </Stack>

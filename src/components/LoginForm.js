@@ -10,12 +10,11 @@ import ErrorIcon from "@mui/icons-material/Error";
 import Divider from "@mui/material/Divider";
 
 import { LOGIN } from "../mutations";
-import { useEffect } from "react";
 import { useAuth } from "../contexts/AppProvider";
 
 export const LoginForm = () => {
   const { setIsLoggedIn, setUser } = useAuth();
-  const [executeLogin, { loading, data, error }] = useMutation(LOGIN);
+  const [executeLogin, { loading, error }] = useMutation(LOGIN);
 
   const {
     register,
@@ -25,7 +24,16 @@ export const LoginForm = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const onSubmit = async ({ email, password }) => {
+    const { data } = await executeLogin({
+      variables: {
+        input: {
+          email: email.toLowerCase().trim(),
+          password,
+        },
+      },
+    });
+
     if (data) {
       const { token, user } = data.login;
 
@@ -43,17 +51,6 @@ export const LoginForm = () => {
 
       navigate("/dashboard", { replace: true });
     }
-  }, [data]);
-
-  const onSubmit = async ({ email, password }) => {
-    await executeLogin({
-      variables: {
-        input: {
-          email: email.toLowerCase().trim(),
-          password,
-        },
-      },
-    });
   };
 
   const styles = {

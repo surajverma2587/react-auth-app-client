@@ -1,22 +1,25 @@
-import { useMutation } from "@apollo/client";
-import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
+import { useForm } from "react-hook-form";
+import { useMutation } from "@apollo/client";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import LoadingButton from "@mui/lab/LoadingButton";
-import ErrorIcon from "@mui/icons-material/Error";
 import Divider from "@mui/material/Divider";
+import Stack from "@mui/material/Stack";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import ErrorIcon from "@mui/icons-material/Error";
+import CloseIcon from "@mui/icons-material/Close";
 
 import { POST_IMAGE } from "../mutations";
-import { useEffect } from "react";
+import { ImageUpload } from "./ImageUpload";
 import { useAuth } from "../contexts/AppProvider";
-// import { ImageUpload } from "./ImageUpload";
 
-export const PostImageForm = () => {
-  const { setIsLoggedIn } = useAuth();
-  const [executePostImage, { loading, data, error }] = useMutation(POST_IMAGE);
-
+export const PostImageForm = ({ onClose }) => {
+  const { user } = useAuth();
+  const [executePostImage, { loading, error }] = useMutation(POST_IMAGE);
+  const [imageUrl, setImageUrl] = useState();
   const {
     register,
     handleSubmit,
@@ -25,27 +28,29 @@ export const PostImageForm = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (data) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [data]);
-
-  const onSubmit = async ({ title, description, imageUrl }) => {
-    await executePostImage({
-      variables: {
-        input: {
-          title,
-          description,
-          imageUrl,
+  const onSubmit = async ({ title, description }) => {
+    if (imageUrl) {
+      const { data } = await executePostImage({
+        variables: {
+          input: {
+            title,
+            description,
+            imageUrl,
+          },
         },
-      },
-    });
+      });
+
+      if (data) {
+        onClose();
+        navigate("/dashboard", { replace: true });
+      }
+    }
   };
 
   const styles = {
     container: {
       backgroundColor: "#fff",
+      height: "100%",
     },
     header: {
       paddingTop: 2,
@@ -63,10 +68,20 @@ export const PostImageForm = () => {
       color: "#d32f2f",
       textAlign: "center",
     },
+    closeIcon: {
+      display: "flex",
+      justifyContent: "flex-end",
+      padding: "0 !important",
+    },
   };
 
   return (
-    <Box sx={styles.container}>
+    <Stack sx={styles.container}>
+      <DialogTitle sx={styles.closeIcon}>
+        <IconButton onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
       <Typography
         variant="h4"
         gutterBottom
@@ -74,10 +89,14 @@ export const PostImageForm = () => {
         align="center"
         sx={styles.header}
       >
-        Login
+        Create Post
       </Typography>
       <Divider />
-      <Box component="form" sx={styles.form} onSubmit={handleSubmit(onSubmit)}>
+      <Stack
+        component="form"
+        sx={styles.form}
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <TextField
           margin="normal"
           id="title"
@@ -102,16 +121,10 @@ export const PostImageForm = () => {
           multiline
           rows={4}
         />
-        <TextField
-          margin="normal"
-          id="imageUrl"
-          label="Image URL"
-          name="imageUrl"
-          variant="outlined"
-          fullWidth
-          {...register("imageUrl", { required: true })}
-          error={!!errors.imageUrl}
-          disabled={loading}
+        <ImageUpload
+          imageUrl={imageUrl}
+          setImageUrl={setImageUrl}
+          fileName={`${user.username}/images`}
         />
         <LoadingButton
           loading={loading}
@@ -135,7 +148,17 @@ export const PostImageForm = () => {
             Failed to create post, please try again later.
           </Typography>
         )}
-      </Box>
-    </Box>
+        {!imageUrl && (
+          <Typography
+            variant="subtitle2"
+            gutterBottom
+            component="div"
+            sx={styles.errorContainer}
+          >
+            Please upload an image to create a post.
+          </Typography>
+        )}
+      </Stack>
+    </Stack>
   );
 };
